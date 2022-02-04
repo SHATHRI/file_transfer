@@ -1,0 +1,44 @@
+---
+- name: iis-check
+  hosts: win
+  tasks:
+
+
+
+     - name: Ensure IIS webserver is installed
+       win_feature:
+           name: Web-Server
+           state: present
+
+
+
+     - name: Git checkout
+       ansible.windows.win_powershell:
+           script: |
+               cd C:/ansible
+               if (Test-Path -Path "Project2") {
+                    cd Project2
+                    git pull
+                }
+                else {
+                    git clone https://Shathri:P499LybGXg4sHx3kBjgm@gitlab.training.dagility.com/Shathri/Project2.git
+                }
+     - name: Execute a command in the remote shell
+       ansible.windows.win_shell: C:\ansible\Project2\build-deploy.ps1 >> C:\ansible\Project2\log.txt
+       args:
+           chdir: C:\ansible\Project2
+
+
+
+     - name: build_publish_deploy
+       ansible.windows.win_powershell:
+           script: |
+               cd C:/ansible
+               if (-Not (Test-Path IIS:\\AppPools\\Project2))
+                 {
+                    New-WebAppPool -Name "Project2"
+                 }
+
+
+
+               New-WebApplication -Name "Project2" -Site "Default Web Site" -PhysicalPath "C:\ansible\Project2\obj\Release\netcoreapp3.1\PubTmp\Out" -ApplicationPool "Project2" -Force

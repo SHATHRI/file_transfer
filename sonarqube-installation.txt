@@ -1,0 +1,44 @@
+scp -i "idendity.pem" jdk-11.exe ec2-user@<linuxvm>:/home/ec2-user/jdk-11.exe
+scp -i "idendity.pem" sonarqube.zip ec2-user@<linuxvm>:/home/ec2-user/sonarqube.zip
+
+winrm set winrm/config/client/auth '@{Basic="true"}'
+winrm set winrm/config/service/auth '@{Basic="true"}'
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+
+ansible win -m win_ping
+nano sonarqube-installation.yaml
+---
+- name: installation
+  hosts: win
+  tasks:
+
+     - name: Copy java
+       ansible.builtin.copy:
+           src: /home/ec2-user/jdk-11.exe
+           dest: C:/Users/Administrator/Downloads/jdk-11.exe
+
+     - name: Install java
+       ansible.windows.win_powershell:
+           script: |
+               cd C:/Users/Administrator/Downloads/
+               & "./jdk-11.exe /s"
+
+
+     - name: Copy sonarqube
+       ansible.builtin.copy:
+           src: /home/ec2-user/sonarqube.zip
+           dest: C:/Users/Administrator/Downloads/sonarqube.zip
+
+     - name: Extract sonarqube zip file
+       ansible.windows.win_powershell:
+           script: |
+               cd C:/Users/Administrator/Downloads/
+               Expand-Archive -Path sonarqube.Zip -DestinationPath C:/Users/Administrator/Downloads/sonarqube
+
+
+     - name: Start sonarqube
+       win_shell: 'C:\Users\Administrator\Downloads\sonarqube\sonarqube-9.0.1.46107\bin\windows-x86-64\StartSonar.bat'
+       async: 60
+
+ansible-playbook sonarqube-installation.yaml
+check in localhost:9000

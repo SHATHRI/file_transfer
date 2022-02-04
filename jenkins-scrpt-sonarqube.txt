@@ -1,0 +1,40 @@
+jenkins scrpit for sonarqube test coverage
+pipeline {
+    agent { label 'windows-node' }
+    
+    stages {
+        stage('Clone-Repo') {
+            steps {
+               
+               powershell '''
+               if (Test-Path -Path "Project1") {
+                    cd Project1
+                    git pull
+                } 
+                else {
+                    git clone https://gitlab.training.dagility.com/Shathri/Project1
+                }
+               '''
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+          steps{
+          
+               powershell '''
+               cd Project1
+               [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\\Program Files\\Java\\jdk-11.0.12")
+               dotnet-sonarscanner begin /k:"Project1" /d:sonar.host.url="http://localhost:9000" /d:sonar.login="admin" /d:sonar.password="Password"
+               & "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" Project1.csproj /p:Configuration="Release" 
+               dotnet-sonarscanner end /d:sonar.login="admin" /d:sonar.password="Password"
+               '''
+            }
+        }
+  
+
+    }
+        
+    
+}
+
+

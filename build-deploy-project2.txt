@@ -1,0 +1,1 @@
+& "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" Project2.csproj /p:PublishProfile=FolderProfile /p:DeployOnBuild=true /p:Configuration="Release" /p:OutputPath=publish /p:Platform='Any CPU'

@@ -1,0 +1,54 @@
+pipeline {
+    agent { label 'windows-node' }
+    
+    stages {
+        stage('Clone-Repo') {
+            steps {
+               
+               powershell '''
+               if (Test-Path -Path "Project1") {
+                    cd Project1
+                    git pull
+                } 
+                else {
+                    git clone https://gitlab.training.dagility.com/Shathri/Project1
+                }
+               '''
+            }
+        }
+        stage('Build-App') {
+            steps {
+               
+               powershell '''
+               cd Project1
+               & "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" Project1.csproj /p:Configuration="Release" /t:Clean 
+               
+               '''
+            }
+        }
+        stage('Publish-App') {
+            steps {
+               
+               powershell '''
+               cd Project1
+               & "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" Project1.csproj /p:PublishProfile=FolderProfile /p:DeployOnBuild=true /p:Configuration="Release" /t:Rebuild /p:OutputPath=publish /p:Platform='Any CPU' 
+               
+               '''
+            }
+        }
+        stage('Deploy-App') {
+            steps {
+               
+               powershell '''
+               cd Project1
+               if (-Not (Test-Path IIS://AppPools/Project1))               {
+                   New-WebAppPool -Name "Project1"
+                
+               }
+               New-WebApplication -Name "Project1" -Site "Default Web Site" -PhysicalPath "C:\\Jenkins\\workspace\\shathri-training\\Project1\\Project1\\obj\\Release\\netcoreapp3.1\\PubTmp\\Out" -ApplicationPool "Project1" -Force
+               Start-Process "iisreset.exe" -NoNewWindow -Wait
+               '''
+            }
+        }
+    }
+}
